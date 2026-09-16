@@ -1,0 +1,1270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trash Appeals Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper:#EDEFE9; --panel:#FFFFFF; --panel-alt:#F7F8F4; --ink:#171A17; --muted:#6C736C;
+    --line:#D6DACF; --line-soft:#E5E8DF; --accent:#B26A05; --accent-ink:#8A5104; --accent-wash:#FBF0DC;
+    --sent:#2C6B4C; --bad:#A3342A; --focus:#B26A05;
+    --f-ui:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --f-data:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+    --cols: 104px 50px minmax(160px,1.05fr) minmax(178px,0.95fr) minmax(220px,1.7fr) 112px 112px 32px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#131614; --panel:#1B1F1C; --panel-alt:#212621; --ink:#E7EAE4; --muted:#949C93;
+      --line:#333A33; --line-soft:#272D27; --accent:#E0A64A; --accent-ink:#F0C079; --accent-wash:#2E2517;
+      --sent:#6BB68C; --bad:#E08379; --focus:#E0A64A; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#131614; --panel:#1B1F1C; --panel-alt:#212621; --ink:#E7EAE4; --muted:#949C93;
+    --line:#333A33; --line-soft:#272D27; --accent:#E0A64A; --accent-ink:#F0C079; --accent-wash:#2E2517;
+    --sent:#6BB68C; --bad:#E08379; --focus:#E0A64A; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font-family:var(--f-ui);
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  img { max-width:100%; }
+  [hidden] { display:none !important; }
+
+  .shell { max-width:1240px; margin:0 auto; padding:0 20px;
+    padding-block: calc(28px + env(safe-area-inset-top,0px)) calc(56px + env(safe-area-inset-bottom,0px));
+    display:flex; flex-direction:column; gap:22px; }
+
+  .masthead { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
+    gap:14px 24px; padding-bottom:16px; border-bottom:2px solid var(--ink); }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .chevrons { display:flex; gap:3px; padding-bottom:5px; }
+  .chevrons i { display:block; width:7px; height:20px; background:var(--accent);
+    clip-path:polygon(0 0,55% 0,100% 50%,55% 100%,0 100%,45% 50%); }
+  .brand h1 { margin:0; font-size:clamp(26px,5vw,36px); font-weight:700; letter-spacing:-0.02em; line-height:1; }
+  .brand .sub { margin:5px 0 0; font-family:var(--f-data); font-size:11.5px; letter-spacing:.04em;
+    color:var(--muted); text-transform:uppercase; }
+  .ticket { font-family:var(--f-data); font-size:11.5px; color:var(--muted); text-align:right;
+    display:grid; gap:2px; letter-spacing:.03em; }
+  .ticket b { color:var(--ink); font-weight:500; }
+  .status.warn { color:var(--accent-ink); }
+  .status.no { color:var(--bad); }
+
+  .stats { display:flex; flex-wrap:wrap; border:1px solid var(--line); background:var(--panel); }
+  .stat { flex:1 1 120px; padding:12px 16px; border-right:1px solid var(--line-soft); }
+  .stat:last-child { border-right:0; }
+  .stat .k { font-family:var(--f-data); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+  .stat .v { font-family:var(--f-data); font-variant-numeric:tabular-nums; font-size:26px; font-weight:500; line-height:1.15; margin-top:2px; }
+  .stat.flag .v { color:var(--accent); }
+  .stat.good .v { color:var(--sent); }
+  .stat.bad .v { color:var(--bad); }
+
+  details.pane { border:1px solid var(--line); background:var(--panel); }
+  details.pane > summary { cursor:pointer; padding:11px 16px; font-family:var(--f-data);
+    font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  details.pane > summary:hover { color:var(--ink); }
+  .pane-body { padding:0 16px 16px; display:grid; gap:10px; }
+  .pane-body p { margin:0; font-size:13.5px; color:var(--muted); max-width:74ch; }
+  .pane-body label.field { display:grid; gap:4px; font-family:var(--f-data); font-size:11px;
+    letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+  .pane-body :is(input[type="password"],input[type="text"],select,textarea) {
+    width:100%; font-family:var(--f-data); font-size:12.5px; padding:9px 10px;
+    border:1px solid var(--line); background:var(--panel-alt); color:var(--ink); }
+  .pane-body textarea { min-height:120px; resize:vertical; }
+  .pane-body :is(input,select,textarea):focus { outline:none; border-color:var(--focus); }
+  .row-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn { font-family:var(--f-data); font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+    font-weight:500; padding:8px 14px; background:var(--ink); color:var(--paper);
+    border:1px solid var(--ink); cursor:pointer; }
+  .btn:hover { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .hint { font-family:var(--f-data); font-size:11px; color:var(--muted); }
+  .hint.ok { color:var(--sent); }
+  .hint.no { color:var(--bad); }
+
+  .drop { border:2px dashed var(--line); background:var(--panel); padding:22px 20px; text-align:center;
+    cursor:pointer; transition:border-color .12s, background .12s; }
+  .drop:hover, .drop.over { border-color:var(--accent); background:var(--accent-wash); }
+  .drop h2 { margin:0; font-size:17px; font-weight:600; }
+  .drop p { margin:5px 0 0; font-family:var(--f-data); font-size:11.5px; color:var(--muted); }
+
+  .queue { display:grid; gap:1px; background:var(--line); border:1px solid var(--line); }
+  .queue:empty { display:none; }
+  .qrow { background:var(--panel); padding:9px 14px; display:flex; align-items:center; gap:12px;
+    font-family:var(--f-data); font-size:12px; }
+  .qrow .qname { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .qrow .qstate { color:var(--muted); flex:none; }
+  .qrow.err .qstate { color:var(--bad); }
+  .spin { width:11px; height:11px; flex:none; border-radius:50%; border:2px solid var(--line);
+    border-top-color:var(--accent); animation:sp .7s linear infinite; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+
+  .toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:space-between; }
+  .filters { display:flex; gap:6px; flex-wrap:wrap; }
+  .chip { font-family:var(--f-data); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    padding:7px 12px; background:transparent; color:var(--muted); border:1px solid var(--line); cursor:pointer; }
+  .chip:hover { color:var(--ink); border-color:var(--ink); }
+  .chip[aria-pressed="true"] { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  .tools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  #search { font-family:var(--f-data); font-size:13px; padding:7px 10px; min-width:150px;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink); }
+  .ghost-btn { font-family:var(--f-data); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    padding:7px 12px; border:1px solid var(--line); background:var(--panel); color:var(--muted); cursor:pointer; }
+  .ghost-btn:hover { color:var(--ink); border-color:var(--ink); }
+
+  .scroller { overflow-x:auto; border:1px solid var(--line); background:var(--panel); }
+  .ledger { min-width:1200px; }
+  .row { display:grid; grid-template-columns:var(--cols); border-bottom:1px solid var(--line-soft); position:relative; }
+  .row > * { padding:8px 10px; min-width:0; display:flex; align-items:center; border-right:1px solid var(--line-soft); }
+  .row > *:last-child { border-right:0; }
+  .row.head { position:sticky; top:env(safe-area-inset-top,0px); z-index:3; background:var(--panel-alt);
+    border-bottom:1px solid var(--line); }
+  .row.head > * { font-family:var(--f-data); font-size:10.5px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); padding-top:10px; padding-bottom:10px; }
+  .row.data::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); }
+  .row.data.done::before { background:var(--sent); }
+  .row.data.res-rejected::before { background:var(--bad); }
+  .row.data.unassessed::before { background:repeating-linear-gradient(180deg,var(--bad) 0 5px,transparent 5px 10px); }
+  .row.data:hover { background:var(--panel-alt); }
+
+  .cell-in { width:100%; font-family:var(--f-data); font-size:13px; color:var(--ink); background:transparent;
+    border:1px solid transparent; padding:4px 6px; min-width:0; }
+  .cell-in:hover:not(:disabled) { border-color:var(--line); }
+  .cell-in:focus { outline:none; border-color:var(--focus); background:var(--panel); }
+  select.cell-in { cursor:pointer; appearance:none; }
+  .cell-in.needs { border-color:var(--accent); background:var(--accent-wash); color:var(--accent-ink); font-style:italic; }
+  .cell-in.needs:focus { font-style:normal; color:var(--ink); }
+
+  .gvwrap { width:100%; display:grid; gap:3px; min-width:0; }
+  .gvline { display:flex; align-items:center; gap:5px; min-width:0; font-family:var(--f-data);
+    font-size:10.5px; color:var(--muted); padding-left:7px; }
+  .gvline span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pin { flex:none; text-decoration:none; font-size:12px; line-height:1; color:var(--muted);
+    border:1px solid var(--line); padding:1px 4px; }
+  .pin:hover { color:var(--accent-ink); border-color:var(--accent); }
+  select.gv-yes { color:var(--sent); }
+  select.gv-no { color:var(--bad); font-weight:500; }
+  select.gv-missing { color:var(--muted); }
+
+  .grounds { display:flex; flex-wrap:wrap; gap:4px; width:100%; padding:2px 0; align-items:center; }
+  .ground-chip { font-family:var(--f-data); font-size:11px; background:var(--accent-wash);
+    color:var(--accent-ink); border:1px solid var(--accent); padding:2px 7px; white-space:nowrap; }
+  .ground-none { font-family:var(--f-data); font-size:11.5px; color:var(--muted); }
+  .ground-unassessed { font-family:var(--f-data); font-size:11.5px; color:var(--bad); }
+  .strength { font-family:var(--f-data); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase;
+    padding:2px 6px; border:1px solid; white-space:nowrap; flex:none; }
+  .strength.strong { color:var(--sent); border-color:var(--sent); }
+  .strength.moderate { color:var(--accent-ink); border-color:var(--accent); }
+  .strength.weak { color:var(--bad); border-color:var(--bad); }
+  .reread { font-family:var(--f-data); font-size:10px; letter-spacing:.07em; text-transform:uppercase;
+    border:1px solid var(--line); background:var(--panel-alt); color:var(--muted); padding:2px 7px;
+    cursor:pointer; white-space:nowrap; }
+  .reread:hover { color:var(--ink); border-color:var(--ink); }
+  .reread[disabled] { opacity:.5; cursor:default; }
+
+  .thumb { width:34px; height:34px; object-fit:cover; border:1px solid var(--line); cursor:zoom-in;
+    background:var(--panel-alt); display:block; }
+  .thumb-none { width:34px; height:34px; border:1px dashed var(--line); display:grid; place-items:center;
+    color:var(--muted); font-size:13px; }
+
+  .sub-toggle { display:flex; align-items:center; gap:7px; font-family:var(--f-data); font-size:11px;
+    letter-spacing:.04em; text-transform:uppercase; cursor:pointer; color:var(--accent-ink); user-select:none; width:100%; }
+  .row.data.done .sub-toggle { color:var(--sent); }
+  .sub-toggle input { accent-color:var(--sent); width:15px; height:15px; cursor:pointer; flex:none; }
+  .sub-toggle span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  select.res-accepted { color:var(--sent); }
+  select.res-rejected { color:var(--bad); }
+  .kill { border:0; background:transparent; cursor:pointer; color:var(--muted); font-size:16px;
+    line-height:1; padding:2px 4px; width:100%; }
+  .kill:hover { color:var(--bad); }
+  .empty { padding:14px 16px; font-family:var(--f-data); font-size:11.5px; letter-spacing:.04em;
+    color:var(--muted); border-bottom:1px solid var(--line-soft); background:var(--panel-alt); }
+
+  .guide { border-top:2px solid var(--ink); padding-top:18px; }
+  .guide h2 { margin:0; font-size:19px; font-weight:700; }
+  .guide .lede { margin:4px 0 18px; font-family:var(--f-data); font-size:12px; color:var(--muted); }
+  .gates { list-style:none; margin:0; padding:0; display:grid; gap:1px; background:var(--line); border:1px solid var(--line); }
+  .gates > li { display:grid; grid-template-columns:46px 1fr; background:var(--panel); }
+  .gate-n { font-family:var(--f-data); font-size:13px; font-weight:600; color:var(--muted);
+    padding:14px 0 0; text-align:center; border-right:1px solid var(--line-soft); }
+  .gate-body { padding:13px 16px 15px; min-width:0; }
+  .gate-body h3 { margin:0 0 4px; font-size:15px; font-weight:600; }
+  .gate-body p { margin:0; font-size:13.5px; color:var(--muted); max-width:66ch; }
+  .gate-body .ground { margin-top:8px; font-family:var(--f-data); font-size:12px; color:var(--accent-ink); }
+  .gate-body .ground b { color:var(--accent-ink); font-weight:600; }
+  .gate-body .pass { margin-top:8px; font-family:var(--f-data); font-size:12px; color:var(--sent); }
+  .caution { margin-top:14px; border-left:3px solid var(--accent); background:var(--accent-wash);
+    padding:12px 14px; font-size:13.5px; max-width:78ch; }
+
+  .footnote { font-family:var(--f-data); font-size:11.5px; color:var(--muted); line-height:1.7; }
+  .footnote b { color:var(--ink); font-weight:500; }
+
+  .lb { position:fixed; inset:0; z-index:50; background:rgba(8,10,8,.85); display:flex;
+    align-items:center; justify-content:center; overflow:auto;
+    padding: calc(24px + env(safe-area-inset-top,0px)) 20px calc(24px + env(safe-area-inset-bottom,0px)); }
+  .lb-inner { max-width:940px; width:100%; display:grid; gap:10px; }
+  .lb img { width:100%; max-height:66vh; object-fit:contain; background:#000; }
+  .lb-meta { background:var(--panel); border:1px solid var(--line); padding:12px 14px; font-size:13.5px; }
+  .lb-meta .who { font-family:var(--f-data); font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:4px; }
+  .override { display:grid; gap:7px; margin-top:12px; }
+  .override label { display:flex; align-items:center; gap:8px; font-size:13.5px; cursor:pointer; }
+  .override input { accent-color:var(--accent); width:15px; height:15px; }
+  .lb-close { position:absolute; top:calc(14px + env(safe-area-inset-top,0px)); right:18px;
+    background:transparent; border:0; color:#fff; font-size:30px; line-height:1; cursor:pointer; }
+
+  :focus-visible { outline:2px solid var(--focus); outline-offset:1px; }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+  @media (max-width:700px) { .ticket { text-align:left; } }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <header class="masthead">
+    <div class="brand">
+      <div class="chevrons" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div>
+        <h1>Trash Appeals</h1>
+        <p class="sub">Republic Services overage disputes</p>
+      </div>
+    </div>
+    <div class="ticket">
+      <div>Coldwater Canyon Trust</div>
+      <div>Log opened <b id="today">—</b></div>
+      <div id="mode-status" class="status no">Not connected</div>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Summary">
+    <div class="stat"><div class="k">Charges</div><div class="v" id="s-total">0</div></div>
+    <div class="stat flag"><div class="k">To submit</div><div class="v" id="s-open">0</div></div>
+    <div class="stat bad"><div class="k">GPS off</div><div class="v" id="s-gps">0</div></div>
+    <div class="stat good"><div class="k">Accepted</div><div class="v" id="s-acc">0</div></div>
+    <div class="stat bad"><div class="k">Rejected</div><div class="v" id="s-rej">0</div></div>
+    <div class="stat"><div class="k">Win rate</div><div class="v" id="s-win">—</div></div>
+  </section>
+
+  <details class="pane" id="settings" open>
+    <summary>Connection</summary>
+    <div class="pane-body">
+      <p>This page holds nothing secret. The API key, the rows, the photos and the rent roll all live behind the backend, reached with the passcode below. Ask Max for the URL and the phrase — you need nothing else, and no account anywhere.</p>
+      <label class="field">Backend URL
+        <input type="text" id="backend-url" autocomplete="off" spellcheck="false" placeholder="https://appeals-xxxxx-uc.a.run.app">
+      </label>
+      <label class="field">Passcode
+        <input type="password" id="backend-pass" autocomplete="off" spellcheck="false" placeholder="the phrase you set as APP_PASSCODE">
+      </label>
+      <label class="field">Model
+        <select id="model">
+          <option value="claude-opus-5">Claude Opus 5 — most accurate on the borderline calls</option>
+          <option value="claude-sonnet-5">Claude Sonnet 5 — faster and cheaper</option>
+          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — cheapest, least reliable here</option>
+        </select>
+      </label>
+      <div class="row-actions">
+        <button class="btn" id="save-conn" type="button">Save and connect</button>
+        <button class="ghost-btn" id="test-conn" type="button">Test connection</button>
+        <span class="hint" id="conn-hint"></span>
+      </div>
+    </div>
+  </details>
+
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="Add overage photos">
+    <h2>Drop overage photos here</h2>
+    <p id="drop-sub">Or click to choose. The file name becomes the property — "859 W 81.jpg"</p>
+  </div>
+  <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" multiple hidden>
+
+  <div class="queue" id="queue"></div>
+
+  <div class="toolbar">
+    <div class="filters" role="group" aria-label="Filter rows">
+      <button class="chip" data-filter="all" aria-pressed="true" type="button">All</button>
+      <button class="chip" data-filter="open" aria-pressed="false" type="button">To submit</button>
+      <button class="chip" data-filter="pending" aria-pressed="false" type="button">Awaiting result</button>
+      <button class="chip" data-filter="done" aria-pressed="false" type="button">Decided</button>
+      <button class="chip" data-filter="noaddr" aria-pressed="false" type="button">Needs address</button>
+      <button class="chip" data-filter="gpsno" aria-pressed="false" type="button">GPS off</button>
+    </div>
+    <div class="tools">
+      <input id="search" type="search" placeholder="Filter rows…" aria-label="Filter rows">
+      <button class="ghost-btn" id="refresh" type="button">Refresh</button>
+      <button class="ghost-btn" id="copy-tsv" type="button">Copy for Sheets</button>
+      <button class="ghost-btn" id="export-json" type="button">Back up</button>
+    </div>
+  </div>
+
+  <div class="scroller">
+    <div class="ledger" role="table" aria-label="Trash overage appeals">
+      <div class="row head" role="row">
+        <div role="columnheader">Date</div>
+        <div role="columnheader">Photo</div>
+        <div role="columnheader">Address</div>
+        <div role="columnheader">GPS verified</div>
+        <div role="columnheader">Appeal reason</div>
+        <div role="columnheader">Submitted</div>
+        <div role="columnheader">Result</div>
+        <div role="columnheader"></div>
+      </div>
+      <datalist id="prop-list"></datalist>
+      <div id="rows"></div>
+      <div class="empty" id="empty-note" hidden></div>
+    </div>
+  </div>
+
+  <details class="pane" id="roll">
+    <summary>Rent roll — <span id="roll-count">not loaded</span></summary>
+    <div class="pane-body">
+      <p>Your property addresses, one per line. Bin labels and file names are matched against this list to fill the Address column, and every geotag is checked against it. Stored in your backend, not in this page — hosting the page never publishes your portfolio.</p>
+      <textarea id="roll-text" spellcheck="false" aria-label="Rent roll addresses, one per line" placeholder="859 W. 81st Street Los Angeles, CA 90044&#10;717 W. 80th Street Los Angeles, CA 90044"></textarea>
+      <div class="row-actions">
+        <button class="btn" id="roll-save" type="button">Save rent roll</button>
+        <span class="hint" id="roll-saved"></span>
+      </div>
+    </div>
+  </details>
+
+  <section class="guide">
+    <h2>Calling it from the photo</h2>
+    <p class="lede">You've already decided to appeal. These are the grounds a photo can give you — every one that applies goes in the row, strongest first.</p>
+    <ol class="gates">
+      <li><div class="gate-n">1</div><div class="gate-body">
+        <h3>Can you read the label on the bin?</h3>
+        <p>The address painted on the container itself — not the house behind it, not a street sign. A background address that disagrees with the bin means nothing; the bin governs.</p>
+        <p class="ground">No label, or unreadable → <b>Can't see the label</b>. Holds no matter how full the bin is.</p>
+      </div></li>
+      <li><div class="gate-n">2</div><div class="gate-body">
+        <h3>Is there sun glare across the bin?</h3>
+        <p>Shooting into low sun, veiling flare over the load, blown highlights where the evidence should be.</p>
+        <p class="ground">Yes → <b>Sun glare</b>.</p>
+      </div></li>
+      <li><div class="gate-n">3</div><div class="gate-body">
+        <h3>Is the picture blurry?</h3>
+        <p>Soft enough that you can't make out where material ends and background begins — motion blur, a dirty lens, a frame grabbed from video.</p>
+        <p class="ground">Yes → <b>Blurry photo</b>.</p>
+      </div></li>
+      <li><div class="gate-n">4</div><div class="gate-body">
+        <h3>Does it clear Republic's own threshold?</h3>
+        <p>Straight off their training slide: an Extra Yard needs material above the lip across <b>more than 50% of the visible area</b>, <i>or</i>, where the view is limited, <b>at least 1 foot above the rim</b>. A front-load bin runs about four feet tall, so a foot is roughly a quarter of its visible height.</p>
+        <p class="ground">Short of either → <b>Under 50% above the lip</b> or <b>Under 1 foot above the rim</b>. Their own numbers, used against them.</p>
+      </div></li>
+      <li><div class="gate-n">5</div><div class="gate-body">
+        <h3>Is the trash above the rim at all?</h3>
+        <p>Two things prove it, and nothing else does: the load <b>breaks the silhouette</b> — outlined against a wall, the sky or the street, with none of the bin behind it — or it <b>physically lifts the lids off the rim</b> so they ride on the load instead of sitting flat.</p>
+        <p class="ground">Neither → <b>Not over the lid</b>, or <b>Lid barely popping up</b> when the lids are only cracked.</p>
+      </div></li>
+      <li><div class="gate-n">6</div><div class="gate-body">
+        <h3>Where does the geotag actually point?</h3>
+        <p>Cab-camera frames carry latitude and longitude in the overlay. The app resolves them against LA County's address data and compares to your rent roll, <b>exact house number</b>.</p>
+        <p class="ground">Not an exact match → <b>GPS discrepancy</b>, and the row is marked <b>No</b>.</p>
+        <p class="pass">Expect the counter that the bin sits in an alley behind the building — decide which of these you want to push.</p>
+      </div></li>
+    </ol>
+    <p class="caution">
+      <b>Looking down into a bin is not the same as looking at a full one.</b>
+      The truck camera sits about ten feet up and looks down through the opening, so material sitting well below the far wall still projects <i>above</i> the near rim in the picture. That one illusion is what makes half-full bins get billed. If you can trace the bin's far wall behind the trash, the trash is inside the bin — however high it looks.
+    </p>
+  </section>
+
+  <p class="footnote">
+    You do three things: drop the photo, tick <b>Submitted</b> once you've filed it, set the <b>Result</b> when Republic answers.
+    Date, bin label, GPS and every appeal ground are read off the photo. The address comes only from the bin, the file name, or what you type — never from GPS.
+    Click a thumbnail to see the picture, the reasoning, and to overrule the call.<br>
+    <b>Where this lives:</b> rows, photos and the rent roll are in your Firebase backend, so everyone with the passcode sees the same ledger. Hit <b>Refresh</b> to pull in what others have changed.
+  </p>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var GEO_URL = "https://public.gis.lacounty.gov/public/rest/services/CAMS_Locator/GeocodeServer/reverseGeocode";
+  var LS = { backend:"ta.backend.v1", pass:"ta.pass.v1", model:"ta.model.v1" };
+
+  var APPEAL_TYPES = [
+    "Can't see the label", "Sun glare", "Blurry photo",
+    "Under 50% above the lip", "Under 1 foot above the rim",
+    "Not over the lid", "Lid barely popping up",
+    "Wrong property", "GPS discrepancy", "Other / needs review"
+  ];
+  var MODEL_GROUNDS = APPEAL_TYPES.slice(0, 7);
+  var RESULTS = ["Accepted", "Rejected"];
+  var GPS_STATES = ["Yes", "No", "Missing info"];
+
+  var PROMPT = [
+    "You are helping a Los Angeles property manager appeal a trash overage charge from Republic Services. He has already decided to appeal. Your job is NOT to decide whether to appeal - it is to find the strongest grounds the photograph supports, and to say honestly how strong the case is.",
+    "",
+    "The photo was taken by a Republic Services truck camera at collection. Check all five tests and report every one the photo supports.",
+    "",
+    "1. LABEL - Is there an address painted or chalked on the container itself, and can you read it? Ignore house numbers on buildings and street signs. No address on the bin, or an illegible one, means the charge cannot be tied to a property.",
+    "",
+    "2. GLARE - Is there sun flare or a blown-out highlight lying across the bin and obscuring the load?",
+    "",
+    "3. BLUR - Is the image too soft to tell where material ends and background begins? Motion blur, a dirty or wet lens, a low-quality video frame.",
+    "",
+    "4. REPUBLIC'S OWN THRESHOLD - Their criteria: material above the lip across MORE THAN 50% of the visible area, OR, where the view is limited, AT LEAST 1 FOOT above the rim. A front-load bin is about four feet tall, so a foot is roughly a quarter of its visible height. Short of either, say so.",
+    "",
+    "5. ABOVE THE RIM AT ALL - Only two things prove it: the load BREAKS THE SILHOUETTE (outlined against a wall, the sky or the street, with none of the bin behind it), or it PHYSICALLY LIFTS THE LIDS off the rim so they ride on the load instead of sitting flat.",
+    "",
+    "CRITICAL, and the most common mistake: these photos are taken from a truck cab about ten feet above the ground, looking DOWN through the opening of the bin. Material sitting entirely INSIDE the bin, below the level of the far wall, still appears ABOVE the near rim in the image. That is a perspective illusion, not an overage. If you can trace the bin's far wall or far rim BEHIND the material, the material is inside the bin however high it looks - say it is not over the rim.",
+    "",
+    "Then rate the case:",
+    "  strong   - at least one ground is plainly true on the face of the photo.",
+    "  moderate - a ground is arguable but a fair reviewer could see it the other way.",
+    "  weak     - the photo holds up. Say so rather than inventing a ground.",
+    "",
+    "Reply with only a JSON object of exactly this shape, no other text:",
+    '{"binLabel": string or null, "photoDate": "YYYY-MM-DD" or null, "gps": "lat,lon" or null, "grounds": array of strings drawn only from '
+      + JSON.stringify(MODEL_GROUNDS) + ', "strength": "strong" or "moderate" or "weak", "confidence": "high" or "medium" or "low", "reasoning": string}',
+    "",
+    "binLabel: the address painted or chalked on the container, exactly as written, or null if none is readable. Do not guess it from the buildings or the street.",
+    "photoDate: if a timestamp is burned into the image, the date from it. Otherwise null.",
+    "gps: if latitude and longitude are printed in the overlay, return them as \"lat,lon\". Otherwise null.",
+    "grounds: every ground the photo supports, strongest first. Only empty when the strength is weak.",
+    "reasoning: two or three sentences naming what you actually saw - where the rim is, what is above it, whether the far wall is visible behind the load, and what the bin label says. Write it so it can be quoted into the appeal."
+  ].join("\n");
+
+  /* ---------- state ---------- */
+
+  var state = { docs: [], roll: [], filter: "all", q: "" };
+  var rowCache = Object.create(null), photoCache = Object.create(null);
+  var backendUrl = "", backendPass = "", model = "claude-opus-5";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var rowsEl = $("rows"), emptyNote = $("empty-note"), propList = $("prop-list"),
+      searchEl = $("search"), queueEl = $("queue"), dropEl = $("drop"), dropSub = $("drop-sub"),
+      fileInput = $("file-input"), modelSel = $("model"), modeStatus = $("mode-status"),
+      connHint = $("conn-hint"), backendInput = $("backend-url"), passInput = $("backend-pass"),
+      rollText = $("roll-text"), rollCount = $("roll-count"), rollSaved = $("roll-saved");
+
+  function connected() { return !!backendUrl; }
+
+  /* ---------- the backend ---------- */
+
+  function api(op, payload) {
+    if (!backendUrl) return Promise.reject(new Error("No backend set — open Connection"));
+    var h = { "content-type": "application/json" };
+    if (backendPass) h["x-app-pass"] = backendPass;
+    return fetch(backendUrl, {
+      method: "POST", headers: h,
+      body: JSON.stringify(Object.assign({ op: op }, payload || {}))
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        var j = null;
+        try { j = JSON.parse(t); } catch (e) {}
+        if (!r.ok) {
+          var msg = (j && j.error) ? j.error : ("HTTP " + r.status);
+          if (r.status === 401) msg = "Passcode rejected by the backend.";
+          throw new Error(msg);
+        }
+        return j || {};
+      });
+    });
+  }
+
+  /* ---------- helpers ---------- */
+
+  function ls(k, v) {
+    try {
+      if (v === undefined) return window.localStorage.getItem(k);
+      window.localStorage.setItem(k, v);
+    } catch (e) { return null; }
+  }
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function todayISO() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function isoFrom(ms) {
+    var d = new Date(ms);
+    return isNaN(d.getTime()) ? todayISO() : d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+  function prettyDate(iso) {
+    if (!iso) return "—";
+    var p = String(iso).split("-");
+    if (p.length !== 3) return iso;
+    var m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return m[Number(p[1]) - 1] + " " + Number(p[2]) + ", " + p[0];
+  }
+  function newId() { return "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function ledgerHasFocus() { var a = document.activeElement; return !!(a && rowsEl.contains(a)); }
+
+  function copyText(text) {
+    function viaExec() {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = text; ta.setAttribute("readonly", "");
+        ta.style.position = "fixed"; ta.style.top = "-1000px"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+        var ok = document.execCommand && document.execCommand("copy");
+        ta.remove();
+        return ok ? "clipboard" : "manual";
+      } catch (e) { return "manual"; }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return "clipboard"; }, viaExec);
+    }
+    return Promise.resolve(viaExec());
+  }
+
+  // The function hands back the bytes; we keep the data URL in memory.
+  function photoURL(id) {
+    if (!id) return Promise.resolve("");
+    if (photoCache[id]) return Promise.resolve(photoCache[id]);
+    return api("getPhoto", { id: id }).then(function (r) {
+      var url = r.data ? ("data:" + (r.mime || "image/jpeg") + ";base64," + r.data) : "";
+      photoCache[id] = url;
+      return url;
+    }).catch(function () { return ""; });
+  }
+
+  /* ---------- address matching ---------- */
+
+  function normAddr(s) {
+    var t = String(s || "").toLowerCase();
+    t = t.replace(/\.(jpe?g|png|webp|heic|gif)$/i, "");
+    t = t.replace(/[.,#]/g, " ");
+    t = t.replace(/\b(\d+)(st|nd|rd|th)\b/g, "$1");
+    t = t.replace(/\bstreet\b/g, "st").replace(/\bavenue\b/g, "ave").replace(/\bboulevard\b/g, "blvd")
+         .replace(/\bplace\b/g, "pl").replace(/\bdrive\b/g, "dr").replace(/\broad\b/g, "rd")
+         .replace(/\bwest\b/g, "w").replace(/\beast\b/g, "e").replace(/\bnorth\b/g, "n").replace(/\bsouth\b/g, "s");
+    t = t.replace(/\b(los angeles|la|ca|california)\b/g, " ");
+    t = t.replace(/\b9\d{4}\b/g, " ");
+    return t.replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function firstNumber(tokens) {
+    for (var i = 0; i < tokens.length; i++) if (/^\d+$/.test(tokens[i])) return tokens[i];
+    return "";
+  }
+  function matchAddress(stub) {
+    var n = normAddr(stub);
+    if (!n || !state.roll.length) return "";
+    var tokens = n.split(" ").filter(Boolean);
+    if (!tokens.length) return "";
+    var num = firstNumber(tokens), best = "", bestScore = 0;
+    state.roll.forEach(function (full) {
+      var ft = normAddr(full).split(" ").filter(Boolean), hit = 0;
+      tokens.forEach(function (t) { if (ft.indexOf(t) !== -1) hit++; });
+      var score = hit / tokens.length;
+      if (num && ft.indexOf(num) === -1) score = 0;
+      if (score > bestScore) { bestScore = score; best = full; }
+    });
+    return bestScore >= 0.6 ? best : "";
+  }
+  // Exact house number, and the street has to agree.
+  function isOwnedExactly(addr) {
+    var a = normAddr(addr).split(" ").filter(Boolean);
+    if (!a.length) return false;
+    var num = firstNumber(a);
+    if (!num) return false;
+    var street = a.filter(function (t) { return t !== num; });
+    return state.roll.some(function (full) {
+      var b = normAddr(full).split(" ").filter(Boolean);
+      if (firstNumber(b) !== num) return false;
+      var shared = street.filter(function (t) { return b.indexOf(t) !== -1; }).length;
+      return shared >= Math.min(2, street.length);
+    });
+  }
+  function stubFromName(name) {
+    return String(name || "").replace(/\.[a-z0-9]+$/i, "").replace(/_+/g, " ").replace(/\s+/g, " ").trim();
+  }
+  // Address comes ONLY from the bin label, the file name, or manual entry. Never GPS.
+  function deriveAddress(binLabel, filename) {
+    var fromBin = binLabel ? matchAddress(binLabel) : "";
+    if (fromBin) return { address: fromBin, needs: false };
+    var fromFile = filename ? matchAddress(stubFromName(filename)) : "";
+    if (fromFile) return { address: fromFile, needs: false };
+    if (binLabel) return { address: binLabel, needs: true };
+    return { address: stubFromName(filename), needs: true };
+  }
+
+  /* ---------- geocoding ---------- */
+
+  function geocode(gps) {
+    var parts = String(gps || "").split(",");
+    var lat = parseFloat(parts[0]), lon = parseFloat(parts[1]);
+    if (!isFinite(lat) || !isFinite(lon)) return Promise.resolve("");
+    var loc = encodeURIComponent(JSON.stringify({ x: lon, y: lat, spatialReference: { wkid: 4326 } }));
+    return fetch(GEO_URL + "?location=" + loc + "&distance=300&outSR=4326&f=pjson")
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var a = j && j.address;
+        return (a && a.Street) ? (a.Street + ", " + a.City + ", " + a.State + " " + a.ZIP) : "";
+      })
+      .catch(function (e) { console.warn("[appeals] geocode failed:", e); return ""; });
+  }
+
+  function verifyGPS(rec) {
+    if (!rec.gps) { rec.gpsAddress = ""; rec.gpsVerified = "Missing info"; return Promise.resolve(rec); }
+    return geocode(rec.gps).then(function (addr) {
+      rec.gpsAddress = addr;
+      if (!addr) { rec.gpsVerified = "Missing info"; return rec; }
+      if (isOwnedExactly(addr)) { rec.gpsVerified = "Yes"; return rec; }
+      rec.gpsVerified = "No";
+      if (rec.grounds.indexOf("GPS discrepancy") === -1) rec.grounds.push("GPS discrepancy");
+      return rec;
+    });
+  }
+
+  /* ---------- data ---------- */
+
+  function pullAll() {
+    if (!connected()) { render(); return Promise.resolve(); }
+    return Promise.all([api("list"), api("getRoll")]).then(function (out) {
+      state.docs = Array.isArray(out[0].rows) ? out[0].rows : [];
+      state.roll = Array.isArray(out[1].addresses) ? out[1].addresses : [];
+      rowCache = Object.create(null);
+      rowsEl.innerHTML = "";
+      if (document.activeElement !== rollText) rollText.value = state.roll.join("\n");
+      rollCount.textContent = state.roll.length ? state.roll.length + " addresses" : "none yet";
+      render();
+    }).catch(function (e) {
+      connHint.textContent = e.message; connHint.className = "hint no";
+      $("settings").open = true;
+      render();
+      throw e;
+    });
+  }
+
+  function localRow(id) {
+    for (var i = 0; i < state.docs.length; i++) if (state.docs[i].id === id) return state.docs[i];
+    return null;
+  }
+  function addRow(rec) {
+    state.docs.push(rec); render();
+    return api("save", { row: rec }).catch(function (e) { warn(e); });
+  }
+  function patchRow(id, fields) {
+    var d = localRow(id);
+    if (!d) return Promise.resolve();
+    Object.assign(d, fields);
+    render();
+    return api("save", { row: d }).catch(function (e) { warn(e); });
+  }
+  function removeRow(id) {
+    state.docs = state.docs.filter(function (r) { return r.id !== id; });
+    delete photoCache[id];
+    render();
+    return api("remove", { id: id }).catch(function (e) { warn(e); });
+  }
+  function warn(e) {
+    console.warn("[appeals]", e);
+    modeStatus.textContent = "Last change didn't save";
+    modeStatus.className = "status no";
+  }
+
+  /* ---------- image prep ---------- */
+
+  function shrink(file) {
+    return new Promise(function (resolve) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var max = 1400, w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, max / Math.max(w, h));
+        var cv = document.createElement("canvas");
+        cv.width = Math.round(w * scale); cv.height = Math.round(h * scale);
+        cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        cv.toBlob(function (blob) { resolve(blob || file); }, "image/jpeg", 0.86);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+  function toBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { var s = String(fr.result); resolve(s.slice(s.indexOf(",") + 1)); };
+      fr.onerror = function () { reject(fr.error); };
+      fr.readAsDataURL(blob);
+    });
+  }
+
+  function extractJSON(text) {
+    if (!text) return null;
+    var t = String(text).trim();
+    var fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fence) t = fence[1].trim();
+    var a = t.indexOf("{"), b = t.lastIndexOf("}");
+    if (a === -1 || b < a) return null;
+    try { return JSON.parse(t.slice(a, b + 1)); } catch (e) { return null; }
+  }
+
+  function askClaude(b64, mime) {
+    return api("classify", { data: b64, mime: mime || "image/jpeg", model: model, prompt: PROMPT })
+      .then(function (r) {
+        var d = extractJSON(r.text);
+        return d ? { ok: true, data: d } : { ok: false, note: "Claude's answer wasn't JSON" };
+      })
+      .catch(function (e) { return { ok: false, note: e.message }; });
+  }
+
+  function applyResult(rec, d) {
+    if (typeof d.photoDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d.photoDate)) rec.date = d.photoDate;
+    if (typeof d.binLabel === "string") rec.binLabel = d.binLabel.trim();
+    if (typeof d.reasoning === "string") rec.reasoning = d.reasoning.slice(0, 700);
+    if (typeof d.confidence === "string") rec.confidence = d.confidence;
+    if (typeof d.gps === "string" && /-?\d+\.\d+\s*,\s*-?\d+\.\d+/.test(d.gps)) rec.gps = d.gps.replace(/\s+/g, "");
+    rec.grounds = Array.isArray(d.grounds)
+      ? d.grounds.filter(function (g) { return typeof g === "string" && APPEAL_TYPES.indexOf(g) !== -1; })
+                 .filter(function (g, i, arr) { return arr.indexOf(g) === i; })
+      : [];
+    rec.strength = (d.strength === "strong" || d.strength === "moderate" || d.strength === "weak")
+      ? d.strength : (rec.grounds.length ? "moderate" : "weak");
+    rec.assessed = true;
+    rec.note = "";
+    var got = deriveAddress(rec.binLabel, rec.filename);
+    rec.address = got.address;
+    rec.needsAddress = got.needs;
+    return rec;
+  }
+
+  /* ---------- upload queue ---------- */
+
+  var working = false, pending = [];
+
+  function enqueue(files) {
+    if (!files || !files.length) return;
+    if (!connected()) { $("settings").open = true; connHint.textContent = "Set the backend first"; connHint.className = "hint no"; return; }
+    Array.prototype.slice.call(files)
+      .filter(function (f) { return /^image\//.test(f.type); })
+      .forEach(function (f) { pending.push(f); });
+    pump();
+  }
+  function qRow(name) {
+    var el = document.createElement("div");
+    el.className = "qrow";
+    var sp = document.createElement("div"); sp.className = "spin";
+    var nm = document.createElement("div"); nm.className = "qname"; nm.textContent = name;
+    var st = document.createElement("div"); st.className = "qstate"; st.textContent = "Preparing…";
+    el.appendChild(sp); el.appendChild(nm); el.appendChild(st);
+    el._state = st; el._spin = sp;
+    queueEl.appendChild(el);
+    return el;
+  }
+  function qDone(el, msg, isErr) {
+    el._spin.remove();
+    el._state.textContent = msg;
+    if (isErr) el.classList.add("err");
+    setTimeout(function () { el.remove(); }, isErr ? 9000 : 2500);
+  }
+
+  function pump() {
+    if (working || !pending.length) return;
+    working = true;
+    var file = pending.shift();
+    var el = qRow(file.name);
+    var t0 = Date.now();
+    var stub = stubFromName(file.name);
+    var rec = {
+      id: newId(), filename: file.name, hasPhoto: false,
+      date: isoFrom(file.lastModified),
+      address: matchAddress(stub) || stub,
+      needsAddress: !matchAddress(stub),
+      binLabel: "", gps: "", gpsAddress: "", gpsVerified: "Missing info",
+      grounds: [], strength: "", submitted: false, result: "",
+      reasoning: "", confidence: "", assessed: false, note: "", createdAt: Date.now()
+    };
+
+    shrink(file).then(function (small) {
+      return toBase64(small).then(function (b64) {
+        el._state.textContent = "Uploading…";
+        return api("putPhoto", { id: rec.id, data: b64, mime: "image/jpeg" })
+          .then(function () { rec.hasPhoto = true; })
+          .catch(function (e) { console.warn("[appeals] photo upload failed:", e); })
+          .then(function () {
+            el._state.textContent = "Reading photo…";
+            return askClaude(b64, "image/jpeg");
+          });
+      });
+    }).then(function (out) {
+      if (!out.ok) { rec.assessed = false; rec.note = out.note; return rec; }
+      applyResult(rec, out.data);
+      if (rec.gps) el._state.textContent = "Checking the geotag…";
+      return verifyGPS(rec);
+    }).then(function () {
+      return addRow(rec);
+    }).then(function () {
+      var secs = Math.round((Date.now() - t0) / 1000);
+      qDone(el, rec.assessed ? (verdictLabel(rec) + " · " + secs + "s") : ("Not assessed — " + rec.note), !rec.assessed);
+    }).catch(function (e) {
+      console.warn("[appeals]", e);
+      qDone(el, "Failed — " + (e && e.message ? e.message : "unknown"), true);
+    }).then(function () { working = false; pump(); });
+  }
+
+  function verdictLabel(rec) {
+    return rec.grounds.length
+      ? "Appeal — " + rec.grounds.length + " ground" + (rec.grounds.length > 1 ? "s" : "")
+      : "No ground — charge stands";
+  }
+
+  function reread(d, btn) {
+    if (!d.hasPhoto) return;
+    if (btn) { btn.disabled = true; btn.textContent = "Reading…"; }
+    api("getPhoto", { id: d.id }).then(function (r) {
+      if (!r.data) throw new Error("photo missing");
+      return askClaude(r.data, r.mime || "image/jpeg");
+    }).then(function (out) {
+      if (!out.ok) return patchRow(d.id, { assessed: false, note: out.note });
+      var rec = {
+        filename: d.filename, date: d.date, binLabel: d.binLabel,
+        gps: d.gps, grounds: [], address: d.address, needsAddress: d.needsAddress
+      };
+      applyResult(rec, out.data);
+      return verifyGPS(rec).then(function () {
+        return patchRow(d.id, {
+          grounds: rec.grounds, strength: rec.strength, binLabel: rec.binLabel,
+          reasoning: rec.reasoning, confidence: rec.confidence, assessed: true, note: "",
+          date: rec.date || d.date, address: rec.address, needsAddress: rec.needsAddress,
+          gps: rec.gps, gpsAddress: rec.gpsAddress, gpsVerified: rec.gpsVerified
+        });
+      });
+    }).catch(function (e) {
+      patchRow(d.id, { assessed: false, note: "couldn't re-read — " + (e && e.message ? e.message : "unknown") });
+    }).then(function () { if (btn) { btn.disabled = false; btn.textContent = "Re-read"; } });
+  }
+
+  /* ---------- lightbox ---------- */
+
+  function openPhoto(d) {
+    var lb = document.createElement("div");
+    lb.className = "lb"; lb.setAttribute("role", "dialog");
+    var inner = document.createElement("div"); inner.className = "lb-inner";
+
+    var img = document.createElement("img");
+    img.alt = "Overage photo for " + (d.address || "unknown property");
+    photoURL(d.id).then(function (u) { if (u) img.src = u; });
+    inner.appendChild(img);
+
+    var meta = document.createElement("div"); meta.className = "lb-meta";
+    var who = document.createElement("div"); who.className = "who";
+    who.textContent = d.assessed ? ("Claude's read" + (d.confidence ? " · " + d.confidence + " confidence" : "")) : "Not assessed";
+    meta.appendChild(who);
+    var body = document.createElement("div");
+    body.textContent = d.assessed
+      ? ((d.binLabel ? "Bin reads “" + d.binLabel + "”. " : "") + (d.reasoning || "No reasoning recorded."))
+      : (d.note || "Claude didn't see this photo.");
+    meta.appendChild(body);
+
+    if (d.gps) {
+      var g = document.createElement("div");
+      g.className = "who"; g.style.marginTop = "10px";
+      g.textContent = "Geotag · " + d.gps + (d.gpsAddress ? " → " + d.gpsAddress : " → not resolved");
+      meta.appendChild(g);
+    }
+
+    var ov = document.createElement("div"); ov.className = "override";
+    var ovWho = document.createElement("div"); ovWho.className = "who";
+    ovWho.textContent = "Grounds — tick to overrule";
+    ov.appendChild(ovWho);
+    APPEAL_TYPES.forEach(function (g) {
+      var lab = document.createElement("label");
+      var cb = document.createElement("input"); cb.type = "checkbox";
+      cb.checked = (d.grounds || []).indexOf(g) !== -1;
+      cb.addEventListener("change", function () {
+        var cur = (d.grounds || []).slice(), at = cur.indexOf(g);
+        if (cb.checked && at === -1) cur.push(g);
+        if (!cb.checked && at !== -1) cur.splice(at, 1);
+        patchRow(d.id, { grounds: cur, assessed: true, note: "" });
+      });
+      var sp = document.createElement("span"); sp.textContent = g;
+      lab.appendChild(cb); lab.appendChild(sp);
+      ov.appendChild(lab);
+    });
+    if (d.hasPhoto) {
+      var rr = document.createElement("button");
+      rr.type = "button"; rr.className = "reread"; rr.textContent = "Re-read";
+      rr.style.justifySelf = "start";
+      rr.addEventListener("click", function () { reread(d, rr); });
+      ov.appendChild(rr);
+    }
+    meta.appendChild(ov);
+    inner.appendChild(meta);
+
+    var close = document.createElement("button");
+    close.className = "lb-close"; close.type = "button";
+    close.innerHTML = "&times;"; close.setAttribute("aria-label", "Close");
+
+    lb.appendChild(inner); lb.appendChild(close);
+    document.body.appendChild(lb);
+    close.focus();
+
+    function shut() { lb.remove(); document.removeEventListener("keydown", esc); }
+    function esc(e) { if (e.key === "Escape") shut(); }
+    close.addEventListener("click", shut);
+    lb.addEventListener("click", function (e) { if (e.target === lb) shut(); });
+    document.addEventListener("keydown", esc);
+  }
+
+  /* ---------- render ---------- */
+
+  function visible() {
+    var q = state.q.trim().toLowerCase();
+    return state.docs.filter(function (d) {
+      if (state.filter === "open" && d.submitted) return false;
+      if (state.filter === "pending" && (!d.submitted || d.result)) return false;
+      if (state.filter === "done" && !d.result) return false;
+      if (state.filter === "noaddr" && !d.needsAddress) return false;
+      if (state.filter === "gpsno" && d.gpsVerified !== "No") return false;
+      if (q) {
+        var hay = ((d.address||"") + " " + (d.grounds||[]).join(" ") + " " + (d.binLabel||"") + " " + (d.gpsAddress||"")).toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    }).sort(function (a, b) {
+      if (a.date !== b.date) return (a.date || "") < (b.date || "") ? 1 : -1;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+  }
+
+  function fillOptions(sel, list, placeholder) {
+    var blank = document.createElement("option");
+    blank.value = ""; blank.textContent = placeholder;
+    sel.appendChild(blank);
+    list.forEach(function (t) {
+      var o = document.createElement("option"); o.value = t; o.textContent = t; sel.appendChild(o);
+    });
+  }
+  function ensureOption(sel, v) {
+    if (!v) return;
+    if (!Array.prototype.some.call(sel.options, function (o) { return o.value === v; })) {
+      var o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
+    }
+  }
+
+  function buildRow(d) {
+    var row = document.createElement("div");
+    row.className = "row data"; row.setAttribute("role", "row"); row.dataset.id = d.id;
+    function cell(a) { var c = document.createElement("div"); c.setAttribute("role", "cell"); c.appendChild(a); return c; }
+
+    var date = document.createElement("input");
+    date.type = "date"; date.className = "cell-in"; date.id = "c-" + d.id + "-date";
+    date.setAttribute("aria-label", "Charge date");
+    date.addEventListener("change", function () { patchRow(d.id, { date: date.value }); });
+
+    var photo = document.createElement("div");
+
+    var addr = document.createElement("input");
+    addr.className = "cell-in"; addr.id = "c-" + d.id + "-addr";
+    addr.setAttribute("list", "prop-list"); addr.setAttribute("aria-label", "Address");
+    addr.placeholder = "Add the address";
+    bindText(addr, d.id, "address", { needsAddress: false });
+
+    var gv = document.createElement("select");
+    gv.className = "cell-in"; gv.id = "c-" + d.id + "-gv";
+    gv.setAttribute("aria-label", "GPS verified");
+    fillOptions(gv, GPS_STATES, "— unchecked —");
+    gv.addEventListener("change", function () { patchRow(d.id, { gpsVerified: gv.value }); });
+
+    var pin = document.createElement("a");
+    pin.className = "pin"; pin.target = "_blank"; pin.rel = "noopener noreferrer";
+    pin.textContent = "◎"; pin.hidden = true;
+
+    var gvWrap = document.createElement("div"); gvWrap.className = "gvwrap";
+    var gvLine = document.createElement("div"); gvLine.className = "gvline";
+    var gvAddr = document.createElement("span");
+    gvLine.appendChild(gvAddr); gvLine.appendChild(pin);
+    gvWrap.appendChild(gv); gvWrap.appendChild(gvLine);
+
+    var grounds = document.createElement("div"); grounds.className = "grounds";
+
+    var lab = document.createElement("label"); lab.className = "sub-toggle";
+    var box = document.createElement("input"); box.type = "checkbox"; box.id = "c-" + d.id + "-sub";
+    var txt = document.createElement("span");
+    lab.appendChild(box); lab.appendChild(txt);
+    box.addEventListener("change", function () { patchRow(d.id, { submitted: box.checked }); });
+
+    var res = document.createElement("select");
+    res.className = "cell-in"; res.id = "c-" + d.id + "-res";
+    res.setAttribute("aria-label", "Result");
+    fillOptions(res, RESULTS, "— pending —");
+    res.addEventListener("change", function () { patchRow(d.id, { result: res.value }); });
+
+    var kill = document.createElement("button");
+    kill.type = "button"; kill.className = "kill"; kill.innerHTML = "&times;";
+    kill.setAttribute("aria-label", "Remove row");
+    kill.addEventListener("click", function () { removeRow(d.id); });
+
+    row.appendChild(cell(date)); row.appendChild(cell(photo)); row.appendChild(cell(addr));
+    row.appendChild(cell(gvWrap)); row.appendChild(cell(grounds));
+    row.appendChild(cell(lab)); row.appendChild(cell(res)); row.appendChild(cell(kill));
+
+    row._parts = { date:date, addr:addr, gv:gv, pin:pin, gvAddr:gvAddr, grounds:grounds,
+                   box:box, txt:txt, res:res, photo:photo };
+    return row;
+  }
+
+  function bindText(input, id, field, extra) {
+    var t = null;
+    function push() {
+      var p = {}; p[field] = input.value;
+      if (extra && input.value.trim()) Object.assign(p, extra);
+      patchRow(id, p);
+    }
+    input.addEventListener("input", function () { if (t) clearTimeout(t); t = setTimeout(push, 700); });
+    input.addEventListener("blur", function () { if (t) { clearTimeout(t); t = null; } push(); });
+  }
+
+  function syncRow(row, d) {
+    var p = row._parts, active = document.activeElement;
+    if (p.date !== active && p.date.value !== (d.date || "")) p.date.value = d.date || "";
+    if (p.addr !== active && p.addr.value !== (d.address || "")) p.addr.value = d.address || "";
+    p.addr.classList.toggle("needs", !!d.needsAddress);
+    p.addr.title = d.needsAddress
+      ? "Not matched to the rent roll — this is the bin label or file name. Type the real address here."
+      : "";
+
+    if (p.gv !== active && p.gv.value !== (d.gpsVerified || "")) { ensureOption(p.gv, d.gpsVerified); p.gv.value = d.gpsVerified || ""; }
+    p.gv.className = "cell-in" + (d.gpsVerified === "Yes" ? " gv-yes" : d.gpsVerified === "No" ? " gv-no" : " gv-missing");
+    if (d.gps) {
+      p.pin.hidden = false;
+      p.pin.href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(d.gps);
+      p.pin.title = "Open " + d.gps + " on a map";
+      p.gvAddr.textContent = d.gpsAddress || d.gps;
+      p.gvAddr.title = d.gpsAddress ? (d.gpsAddress + "  (" + d.gps + ")") : d.gps;
+    } else {
+      p.pin.hidden = true;
+      p.gvAddr.textContent = "no GPS in photo";
+      p.gvAddr.title = "";
+    }
+
+    if (p.res !== active && p.res.value !== (d.result || "")) { ensureOption(p.res, d.result); p.res.value = d.result || ""; }
+    if (p.box !== active) p.box.checked = !!d.submitted;
+    p.txt.textContent = d.submitted ? "Submitted" : "Not yet";
+    row.classList.toggle("done", !!d.submitted);
+    row.classList.toggle("unassessed", !d.assessed);
+    row.classList.toggle("res-rejected", d.result === "Rejected");
+    p.res.className = "cell-in" + (d.result === "Accepted" ? " res-accepted" : d.result === "Rejected" ? " res-rejected" : "");
+
+    var key = (d.assessed ? "A" : "U") + "|" + (d.note||"") + "|" + (d.strength || "") + "|" + (d.grounds || []).join("|");
+    if (p.grounds._key !== key) {
+      p.grounds._key = key;
+      p.grounds.innerHTML = "";
+      if (!d.assessed) {
+        var w = document.createElement("span");
+        w.className = "ground-unassessed";
+        w.textContent = "Not assessed — " + (d.note || "no read");
+        p.grounds.appendChild(w);
+        if (d.hasPhoto) {
+          var rr = document.createElement("button");
+          rr.type = "button"; rr.className = "reread"; rr.textContent = "Re-read";
+          rr.addEventListener("click", function () { reread(d, rr); });
+          p.grounds.appendChild(rr);
+        }
+      } else {
+        if (d.grounds && d.grounds.length) {
+          d.grounds.forEach(function (g) {
+            var b = document.createElement("span"); b.className = "ground-chip"; b.textContent = g;
+            p.grounds.appendChild(b);
+          });
+        } else {
+          var n = document.createElement("span"); n.className = "ground-none";
+          n.textContent = "No ground the photo supports";
+          p.grounds.appendChild(n);
+        }
+        if (d.strength) {
+          var st = document.createElement("span");
+          st.className = "strength " + d.strength;
+          st.textContent = d.strength === "strong" ? "strong case" : d.strength === "moderate" ? "arguable" : "weak case";
+          p.grounds.appendChild(st);
+        }
+      }
+    }
+
+    if (p.photo._pid !== (d.hasPhoto ? d.id : "")) {
+      p.photo._pid = d.hasPhoto ? d.id : "";
+      p.photo.innerHTML = "";
+      if (d.hasPhoto) {
+        var img = document.createElement("img");
+        img.className = "thumb"; img.alt = "Photo for " + (d.address || "this charge");
+        img.addEventListener("click", function () { openPhoto(d); });
+        photoURL(d.id).then(function (u) { if (u) img.src = u; });
+        p.photo.appendChild(img);
+      } else {
+        var none = document.createElement("div"); none.className = "thumb-none"; none.textContent = "—";
+        p.photo.appendChild(none);
+      }
+    }
+  }
+
+  function render() {
+    var list = visible(), seen = Object.create(null), reorder = !ledgerHasFocus();
+
+    list.forEach(function (d) {
+      seen[d.id] = true;
+      var row = rowCache[d.id];
+      if (!row) { row = buildRow(d); rowCache[d.id] = row; rowsEl.appendChild(row); }
+      syncRow(row, d);
+    });
+    Object.keys(rowCache).forEach(function (id) {
+      if (!seen[id]) { rowCache[id].remove(); delete rowCache[id]; }
+    });
+    if (reorder) list.forEach(function (d) { rowsEl.appendChild(rowCache[d.id]); });
+
+    emptyNote.hidden = !!list.length;
+    if (!list.length) {
+      emptyNote.textContent = !connected() ? "Set the backend URL and passcode under Connection to load the ledger."
+        : state.docs.length ? "No rows match this filter."
+        : "Nothing logged yet. Paste your rent roll below, then drop a photo.";
+    }
+
+    var total = state.docs.length;
+    var open = state.docs.filter(function (d) { return d.grounds && d.grounds.length && !d.submitted; }).length;
+    var gpsOff = state.docs.filter(function (d) { return d.gpsVerified === "No"; }).length;
+    var acc = state.docs.filter(function (d) { return d.result === "Accepted"; }).length;
+    var rej = state.docs.filter(function (d) { return d.result === "Rejected"; }).length;
+    $("s-total").textContent = total;
+    $("s-open").textContent = open;
+    $("s-gps").textContent = gpsOff;
+    $("s-acc").textContent = acc;
+    $("s-rej").textContent = rej;
+    $("s-win").textContent = (acc + rej) ? Math.round(acc / (acc + rej) * 100) + "%" : "—";
+
+    var names = state.roll.slice();
+    state.docs.forEach(function (d) {
+      var a = (d.address || "").trim();
+      if (a && names.indexOf(a) === -1) names.push(a);
+    });
+    propList.innerHTML = "";
+    names.forEach(function (n) { var o = document.createElement("option"); o.value = n; propList.appendChild(o); });
+  }
+
+  /* ---------- connection ---------- */
+
+  function showMode() {
+    if (!connected()) {
+      modeStatus.textContent = "Not connected"; modeStatus.className = "status no";
+      dropSub.textContent = "Set the backend under Connection first — nothing can be read without it.";
+      return;
+    }
+    var host = /^https?:\/\//.test(backendUrl) ? backendUrl.replace(/^https?:\/\//, "").split("/")[0] : "same site";
+    modeStatus.textContent = "Connected · " + host;
+    modeStatus.className = "status";
+    dropSub.textContent = 'Or click to choose. The file name becomes the property — "859 W 81.jpg"';
+  }
+
+  function readConn() {
+    backendUrl = backendInput.value.trim().replace(/\/+$/, "");
+    backendPass = passInput.value;
+    model = modelSel.value;
+  }
+
+  $("save-conn").addEventListener("click", function () {
+    readConn();
+    ls(LS.backend, backendUrl); ls(LS.pass, backendPass); ls(LS.model, model);
+    showMode();
+    connHint.textContent = "Loading…"; connHint.className = "hint";
+    pullAll().then(function () {
+      connHint.textContent = "Connected — " + state.docs.length + " row(s), " + state.roll.length + " address(es)";
+      connHint.className = "hint ok";
+      $("settings").open = false;
+    }).catch(function () {});
+  });
+
+  $("test-conn").addEventListener("click", function (e) {
+    var btn = e.currentTarget;
+    readConn();
+    if (!connected()) { connHint.textContent = "Enter the backend URL first"; connHint.className = "hint no"; return; }
+    btn.disabled = true; connHint.textContent = "Testing…"; connHint.className = "hint";
+    api("list").then(function (r) {
+      connHint.textContent = "Backend answered — " + ((r.rows || []).length) + " row(s) stored";
+      connHint.className = "hint ok";
+    }).catch(function (err) {
+      connHint.textContent = err.message;
+      connHint.className = "hint no";
+    }).then(function () { btn.disabled = false; });
+  });
+
+  $("roll-save").addEventListener("click", function () {
+    var list = rollText.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+    rollSaved.textContent = "Saving…"; rollSaved.className = "hint";
+    api("setRoll", { addresses: list }).then(function () {
+      state.roll = list;
+      rollCount.textContent = list.length ? list.length + " addresses" : "none yet";
+      rollSaved.textContent = "Saved"; rollSaved.className = "hint ok";
+      render();
+      setTimeout(function () { rollSaved.textContent = ""; }, 2000);
+    }).catch(function (e) { rollSaved.textContent = e.message; rollSaved.className = "hint no"; });
+  });
+
+  $("refresh").addEventListener("click", function (e) {
+    var btn = e.currentTarget, old = btn.textContent;
+    btn.disabled = true; btn.textContent = "Refreshing…";
+    pullAll().catch(function () {}).then(function () { btn.disabled = false; btn.textContent = old; });
+  });
+
+  /* ---------- toolbar ---------- */
+
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (btn) {
+    btn.addEventListener("click", function () {
+      state.filter = btn.dataset.filter;
+      Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (b) {
+        b.setAttribute("aria-pressed", String(b === btn));
+      });
+      render();
+    });
+  });
+  searchEl.addEventListener("input", function () { state.q = searchEl.value; render(); });
+
+  $("copy-tsv").addEventListener("click", function (e) {
+    var btn = e.currentTarget, old = btn.textContent;
+    var lines = ["Date\tAddress\tBin label\tGPS verified\tGPS coordinates\tGPS address\tAppeal reasons\tStrength\tSubmitted\tResult\tClaude's read"];
+    visible().forEach(function (d) {
+      lines.push([d.date||"", d.address||"", d.binLabel||"", d.gpsVerified||"", d.gps||"", d.gpsAddress||"",
+                  (d.grounds||[]).join("; "), d.strength||"", d.submitted ? "Yes" : "No",
+                  d.result || "Pending", (d.reasoning||"").replace(/\s+/g, " ")].join("\t"));
+    });
+    copyText(lines.join("\n")).then(function (how) {
+      btn.textContent = how === "clipboard" ? "Copied" : "Use Back up instead";
+      setTimeout(function () { btn.textContent = old; }, how === "clipboard" ? 1400 : 3000);
+    });
+  });
+
+  $("export-json").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify({ rows: state.docs, roll: state.roll }, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "trash-appeals-backup-" + todayISO() + ".json";
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  });
+
+  /* ---------- drop ---------- */
+
+  dropEl.addEventListener("click", function () { fileInput.click(); });
+  dropEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener("change", function () { enqueue(fileInput.files); fileInput.value = ""; });
+  ["dragenter","dragover"].forEach(function (t) {
+    dropEl.addEventListener(t, function (e) { e.preventDefault(); dropEl.classList.add("over"); });
+  });
+  ["dragleave","drop"].forEach(function (t) {
+    dropEl.addEventListener(t, function (e) { e.preventDefault(); dropEl.classList.remove("over"); });
+  });
+  dropEl.addEventListener("drop", function (e) {
+    if (e.dataTransfer && e.dataTransfer.files) enqueue(e.dataTransfer.files);
+  });
+
+  /* ---------- boot ---------- */
+
+  backendUrl = (ls(LS.backend) || "").trim().replace(/\/+$/, "");
+  backendPass = ls(LS.pass) || "";
+  model = ls(LS.model) || "claude-opus-5";
+  backendInput.value = backendUrl;
+  passInput.value = backendPass;
+  modelSel.value = model;
+  $("today").textContent = prettyDate(todayISO());
+  showMode();
+  if (connected()) { $("settings").open = false; pullAll().catch(function () {}); }
+  else render();
+})();
+</script>
+</body>
+</html>
