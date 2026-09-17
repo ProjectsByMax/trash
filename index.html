@@ -776,7 +776,10 @@
         el._state.textContent = "Uploading…";
         return api("putPhoto", { id: rec.id, data: b64, mime: "image/jpeg" })
           .then(function () { rec.hasPhoto = true; })
-          .catch(function (e) { console.warn("[appeals] photo upload failed:", e); })
+          .catch(function (e) {
+            rec.photoError = (e && e.message) ? e.message : "upload failed";
+            console.warn("[appeals] photo upload failed:", e);
+          })
           .then(function () {
             el._state.textContent = "Reading photo…";
             return askClaude(b64, "image/jpeg");
@@ -1087,7 +1090,12 @@
         photoURL(d.id).then(function (u) { if (u) img.src = u; });
         p.photo.appendChild(img);
       } else {
-        var none = document.createElement("div"); none.className = "thumb-none"; none.textContent = "—";
+        var none = document.createElement("div"); none.className = "thumb-none";
+        none.textContent = d.photoError ? "!" : "—";
+        none.title = d.photoError
+          ? ("The picture did not reach storage — " + d.photoError)
+          : "No photo stored for this row.";
+        if (d.photoError) none.style.color = "var(--bad)";
         p.photo.appendChild(none);
       }
     }
@@ -1149,10 +1157,13 @@
     dropSub.textContent = 'Or click to choose. The file name becomes the property — "859 W 81.jpg"';
   }
 
+  // Reading the boxes also remembers them. Anything else leaves a trap where
+  // the app works until the next refresh and then asks for everything again.
   function readConn() {
     backendUrl = backendInput.value.trim().replace(/\/+$/, "");
     backendPass = passInput.value;
     model = modelSel.value;
+    ls(LS.backend, backendUrl); ls(LS.pass, backendPass); ls(LS.model, model);
   }
 
   $("save-conn").addEventListener("click", function () {
